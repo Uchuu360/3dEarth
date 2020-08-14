@@ -1,0 +1,182 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>threejs demo2</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <script src="js/three.js"></script>
+  <script src="js/OrbitControls.js"></script>
+  <script src="./three.js-dev/examples/js/loaders/TGALoader.js"></script>
+  <script>
+    var scene = new THREE.Scene();
+
+    let geometry = new THREE.SphereGeometry(50, 200, 200)
+
+    var textureLoader = new THREE.TextureLoader();
+    let texture = textureLoader.load('./img/earthmap1.jpg')
+    var material = new THREE.MeshPhongMaterial({
+      // shininess: 30,
+      map: texture, //设置纹理贴图
+      transparent: false,
+      opacity: 0.4,
+    });
+    var mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+
+    // Galaxy
+    let galaxyGeometry = new THREE.SphereGeometry(500, 100, 100);
+
+    // Load Galaxy Textures
+    let texture2 = textureLoader.load('./img/starfield.png');
+    let galaxyMaterial = new THREE.MeshBasicMaterial({
+      map: texture2,
+      side: THREE.BackSide,
+      transparent: true,
+      // opacity: 0.4,
+      // color: 'pink'
+    });
+    let galaxy = new THREE.Mesh(galaxyGeometry, galaxyMaterial);
+    scene.add(galaxy)
+    console.log(scene);
+
+    let corPoint = new THREE.SphereGeometry(3, 10, 10)
+    let pointMaterial = new THREE.MeshPhongMaterial({
+      color: 'pink',
+    })
+    let EarthPoint = new THREE.Mesh(corPoint, pointMaterial)
+    scene.add(EarthPoint)
+    // let tgaLoader = new THREE.TGALoader();
+    // let cube = new THREE.CubeGeometry(1000,1000,1000,)
+    // // var cubeMaterials = tgaLoader.load(['./img/galaxy+X.tga','./img/galaxy-X.tga','./img/galaxy+Y.tga','./img/galaxy-Y.tga','./img/galaxy+Z.tga','./img/galaxy-Z.tga'])
+    // let paths = ['./img/galaxy+X.tga','./img/galaxy-X.tga','./img/galaxy+Y.tga','./img/galaxy-Y.tga','./img/galaxy+Z.tga','./img/galaxy-Z.tga']
+    // let cubetexts = paths.map((item)=>{
+    //   let texture = tgaLoader.load(item)
+    //   return texture
+    // })
+    // let cubeMaterial = new THREE.MeshPhongMaterial({
+    //   envMap : cubetexts
+    //   // color: 'pink',
+    //   // side: THREE.DoubleSide,
+    //   // wireframe :true
+    // })
+    // // console.log(cubetexts);
+
+    // let galaxyCube = new THREE.Mesh(cube,cubeMaterial)
+    // cubeMaterial.alphaTest = 0.1;
+    // scene.add(galaxyCube)
+
+
+
+    // var point = new THREE.PointLight(0x444444, 1, 0);
+    // point.position.set(400, 200, 300); /
+    // point.castShadow = true;
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 200, 200)
+    // directionalLight.target = mesh
+    var directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight2.position.set(0, -200, 200)
+    // directionalLight.target = mesh
+    var ambient = new THREE.AmbientLight(0x888888);
+    scene.add(ambient, directionalLight, directionalLight2);
+
+
+
+
+    var width = window.innerWidth; //窗口宽度
+    var height = window.innerHeight; //窗口高度
+    var k = width / height; //窗口宽高比
+    var s = 100; //三维场景显示范围控制系数，系数越大，显示的范围越大
+    var camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 5000);
+    camera.position.set(200, 0, 0); //设置相机位置
+    camera.lookAt(scene.position); //设置相机方向(指向的场景对象)
+
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(width, height); //设置渲染区域尺寸
+    renderer.setClearColor(0xb9d3ff, 1); //设置背景颜色
+    document.body.appendChild(renderer.domElement); //body元素中插入canvas对象
+
+
+
+
+    function getCordinate(longitude, latitude, radius = 50) {
+      var phi = (90 - latitude) * (Math.PI / 180)
+      var theta = (longitude + 180) * (Math.PI / 180)
+
+      let x = -((radius) * Math.sin(phi) * Math.cos(theta))
+      let z = ((radius) * Math.sin(phi) * Math.sin(theta))
+      let y = ((radius) * Math.cos(phi))
+
+      return {
+        x: x,
+        y: y,
+        z: z
+      }
+    }
+    const {
+      x,
+      y,
+      z
+    } =
+    //  getCordinate(116.23, 39.54)
+    getCordinate(-0.7, 51.3)
+    EarthPoint.position.set(x, y, z)
+
+
+
+    // let shapePoint = new THREE.Shape();
+    // shapePoint.absarc(0, 0, 50, 0, 2 * Math.PI, false);
+    // let arcGeometry = new THREE.ShapeGeometry(shapePoint);
+    // let arcMaterial = new THREE.MeshBasicMaterial({
+    //   color: 0x008080
+    // });
+    // let point2 = new THREE.Mesh(arcGeometry, arcMaterial);
+    // point2.position.set(x, y, z)
+
+    // let geometryLine = new THREE.Geometry();
+    // let arc = new THREE.ArcCurve(0, 0, 50, 0, 2 * Math.PI);
+    // let points = arc.getPoints(40);
+    // geometryLine.setFromPoints(points);
+    // let LineMateri = new THREE.LineBasicMaterial({
+    //   color: 0x20b2aa
+    // });
+    // let line1 = new THREE.Line(geometryLine, LineMateri);
+    // scene.add(point2, line1)
+
+
+
+    // let spherical = new THREE.Spherical();
+    // spherical.setFromCartesianCoords(x, y, z);
+    // point2.rotateX(spherical.phi - Math.PI / 2);
+    // point2.rotateY(spherical.theta);
+
+    
+
+
+
+    function render() {
+      renderer.render(scene, camera);
+      // mesh.rotateY(0.01)
+      galaxy.rotateY(0.005)
+      requestAnimationFrame(render); //请求再次执行渲染函数render
+
+    }
+
+    render();
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  </script>
+</body>
+
+</html>

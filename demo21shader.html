@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="shortcut icon" href="#" />
+  </head>
+  <body>
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script id="vs" type="x-shader/x-vertex">
+      void main() {
+
+                 gl_PointSize = 10.0;
+                 gl_Position = vec4( position, 1.0 );
+
+             }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+      void main() {
+
+              gl_FragColor = vec4(1.0,1.0,0.0,1.0);
+
+          }
+    </script>
+
+    <script>
+      var scene = null
+      var camera = null
+      var renderer = null
+      var cube = null
+      var points = null
+      var material = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vs').textContent,
+        fragmentShader: document.getElementById('fs').textContent,
+        // wireframe:true
+      })
+
+      function init() {
+        renderer = new THREE.WebGLRenderer({})
+        document.body.appendChild(renderer.domElement)
+        scene = new THREE.Scene()
+
+        camera = new THREE.OrthographicCamera(-5, 5, 3.75, -3.75, 0.1, 100)
+        camera.position.set(5, 15, 25)
+        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        scene.add(camera)
+
+        var light = new THREE.DirectionalLight()
+        light.position.set(3, 2, 5)
+        scene.add(light)
+
+        // cube = new THREE.Mesh(new THREE.CubeGeometry(2, 2, 2), material)
+        // scene.add(cube)
+
+        var vertices = new Float32Array([
+          0.5,
+          0.5,
+          0.5, //顶点0
+          -0.5,
+          0.5,
+          0.5, //顶点1
+          -0.5,
+          -0.5,
+          0.5, //顶点2
+          0.5,
+          -0.5,
+          0.5, //顶点3
+        ])
+        //类型数组格式顶点数据转为BufferAttribute对象
+        var verticesPosition = new THREE.BufferAttribute(vertices, 3)
+        var geometry = new THREE.BufferGeometry() //缓冲几何对象
+        geometry.addAttribute('position',verticesPosition);
+        points=new THREE.Points(geometry,material);
+        scene.add(points)
+
+        draw()
+      }
+
+      function draw() {
+        points.rotation.y += 0.01
+        if (points.rotation.y > Math.PI * 2) {
+          points.rotation.y -= Math.PI * 2
+        }
+
+        renderer.render(scene, camera)
+
+        requestAnimationFrame(draw)
+      }
+
+      init()
+    </script>
+  </body>
+</html>
