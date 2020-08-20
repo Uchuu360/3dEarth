@@ -1,0 +1,216 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>threejs demo2</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      canvas {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      .text {
+        width: 200px;
+        color: white;
+        font-size: 18px;
+        padding: 3px;
+        border-radius: 5%;
+        position: absolute;
+        display: none;
+        z-index: 1;
+        /* text-align: center; */
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="text"></div>
+    <!-- <button onclick='add10Lines'>add 10 lines</button> -->
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="./three.js-dev/examples/js/loaders/TGALoader.js"></script>
+
+    <!--default params: gl_FragColor = vec4(color,sin(4.5*(vUv.x*2. + (time*1.0)))); -->
+    <!-- <script type="module" src="./js/export.js"></script> -->
+    <script type="module">
+      import { Line2 } from './three.js-dev/examples/jsm/lines/Line2.js'
+      import { LineMaterial } from './three.js-dev/examples/jsm/lines/LineMaterial.js'
+      import { LineGeometry } from './three.js-dev/examples/jsm/lines/LineGeometry.js'
+      var scene = new THREE.Scene()
+
+      // var shaderMaterial = new THREE.ShaderMaterial({
+      //   vertexShader: document.getElementById('vs').textContent,
+      //   fragmentShader: document.getElementById('fs').textContent,
+      //   wireframe: true,
+      // })
+      let textBox = document.getElementsByClassName('text')[0]
+
+      let INTERSECTED
+
+      let group = new THREE.Group()
+      let pointList = []
+      let circleList = []
+
+      let uniforms
+      // let geometry = new THREE.SphereGeometry(50, 50, 50)
+      var textureLoader = new THREE.TextureLoader()
+      // let texture = textureLoader.load('./img/earthmap1.jpg')
+      let texture = textureLoader.load('./img/arenaEarth.jpg')
+      let normaltexture = textureLoader.load('./img/earthmap2.jpg')
+      var material = new THREE.MeshLambertMaterial({
+        map: texture, //设置纹理贴图
+        normalMap: normaltexture,
+        transparent: true,
+        // emissive: 0x000000,
+        // opacity: 0.4,
+      })
+      var mesh = new THREE.Mesh(new THREE.SphereGeometry(55, 20, 20), material)
+      group.add(mesh)
+
+      // Galaxy
+      let galaxyGeometry = new THREE.SphereGeometry(500, 50, 50)
+
+      // Load Galaxy Textures
+      let texture2 = textureLoader.load('./img/starfield.png')
+      let galaxyMaterial = new THREE.MeshBasicMaterial({
+        map: texture2,
+        side: THREE.BackSide,
+        transparent: true,
+        // opacity: 0.4,
+        // color: 'pink'
+      })
+      let galaxy = new THREE.Mesh(galaxyGeometry, galaxyMaterial)
+      scene.add(galaxy)
+      console.log(scene)
+
+      uniforms = {
+        time: {
+          type: 'f',
+          // value: 0.5,
+          value: 1,
+        },
+      }
+
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+      directionalLight.position.set(0, 200, 200)
+      directionalLight.target = mesh
+      scene.add(directionalLight)
+
+      var hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5)
+      hemisphereLight.position.set(0, -200, 200)
+      scene.add(hemisphereLight)
+
+      var directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight2.position.set(0, -200, 200)
+      directionalLight2.target = mesh
+      scene.add(directionalLight2)
+
+      var directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight3.position.set(0, 0, -200)
+      directionalLight3.target = mesh
+      scene.add(directionalLight3)
+
+      var ambient = new THREE.AmbientLight(0x444444)
+      // scene.add(ambient, directionalLight, directionalLight2)
+      scene.add(ambient)
+
+      var width = window.innerWidth //窗口宽度
+      var height = window.innerHeight //窗口高度
+      var k = width / height //窗口宽高比
+      var s = 200 //三维场景显示范围控制系数，系数越大，显示的范围越大
+      var camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 5000)
+      camera.position.set(100, 100, 100) //设置相机位置
+      camera.lookAt(scene.position) //设置相机方向(指向的场景对象)
+
+      var renderer = new THREE.WebGLRenderer()
+      renderer.setSize(width, height) //设置渲染区域尺寸
+      renderer.setClearColor(0xb9d3ff, 1) //设置背景颜色
+      document.body.appendChild(renderer.domElement) //body元素中插入canvas对象
+
+      function getCordinate(longitude, latitude, radius = 55) {
+        var phi = (90 - latitude) * (Math.PI / 180)
+        var theta = (longitude + 180) * (Math.PI / 180)
+
+        let x = -(radius * Math.sin(phi) * Math.cos(theta))
+        let z = radius * Math.sin(phi) * Math.sin(theta)
+        let y = radius * Math.cos(phi)
+
+        return new THREE.Vector3(x, y, z)
+      }
+
+      function drawPoint(longitude, latitude) {
+        let arcMaterial = new THREE.MeshBasicMaterial({
+          // color: 0x008080,
+          color: 'orange',
+          side: THREE.BackSide,
+          transparent: true,
+        })
+
+        let LineMateri = new THREE.LineBasicMaterial({
+          // color: 0x20b2aa
+          color: 'orange',
+          transparent: true,
+        })
+
+        let shapePoint = new THREE.Shape()
+        shapePoint.absarc(0, 0, 2, 0, 2 * Math.PI, false)
+        let arcGeometry = new THREE.ShapeGeometry(shapePoint)
+
+        let point = new THREE.Mesh(arcGeometry, arcMaterial)
+
+        //draw curve
+        let geometryLine = new THREE.Geometry()
+        let arc = new THREE.ArcCurve(0, 0, 3, 0, 2 * Math.PI)
+        let points = arc.getPoints(40)
+        geometryLine.setFromPoints(points)
+
+        let line = new THREE.Line(geometryLine, LineMateri)
+
+        let pos = getCordinate(longitude, latitude, 55)
+
+        point.position.set(pos.x, pos.y, pos.z)
+        line.position.set(pos.x, pos.y, pos.z)
+
+        point.lookAt(new THREE.Vector3(0, 0, 0))
+        line.lookAt(new THREE.Vector3(0, 0, 0))
+
+        group.add(point, line)
+        pointList.push(point)
+        circleList.push(line)
+      }
+
+      drawPoint(-0.7, 51.3)
+      drawPoint(139.44, 35.39)
+      drawPoint(-74, 40.43)
+      drawPoint(-58.4, -34.6)
+      scene.add(group)
+      function render() {
+        renderer.render(scene, camera)
+        circleList.forEach((item) => {
+          item.scale.x = item.scale.x + 0.005
+          item.scale.y = item.scale.y + 0.005
+          if (item.scale.x > 1.1) {
+            item.material.opacity = item.material.opacity - 0.005
+          }
+          if (item.scale.x > 2) {
+            item.scale.x = 1
+            item.scale.y = 1
+            item.material.opacity = 1
+          }
+        })
+        // group.rotateY(0.01)
+        galaxy.rotateY(0.005)
+        uniforms.time.value += 0.01
+        requestAnimationFrame(render) //请求再次执行渲染函数render
+      }
+
+      render()
+      var controls = new THREE.OrbitControls(camera, renderer.domElement)
+    </script>
+  </body>
+</html>

@@ -9,11 +9,20 @@
 
       canvas {
         display: block;
+        position: relative;
+        /* z-index: -1; */
+      }
+
+      .text {
+        position: absolute;
+        color: white;
+        z-index: 1;
       }
     </style>
   </head>
 
   <body>
+    <div class="text"> this is my text container </div>
     <!-- <button onclick='add10Lines'>add 10 lines</button> -->
     <script src="js/three.js"></script>
     <script src="js/OrbitControls.js"></script>

@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>threejs demo2</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="./three.js-dev/examples/js/loaders/TGALoader.js"></script>
+    <script>
+      var scene = new THREE.Scene()
+
+      //drawing the earth
+      const geometry = new THREE.SphereGeometry(50, 100, 100) // 球体
+      const textureLoader = new THREE.TextureLoader() // 创建纹理贴图
+      const texture = textureLoader.load('./img/earthmap2.jpg', (texture) => {
+        let material = new THREE.MeshLambertMaterial({
+          map: texture,
+          transparent: true,
+          // wireframe:true
+        })
+        let mesh = new THREE.Mesh(geometry, material)
+        scene.add(mesh)
+      })
+
+      let group = new THREE.Group()
+      //draw points
+      let shapePoint = new THREE.Shape()
+      shapePoint.absarc(0, 0, 1.5, 0, 2 * Math.PI, false)
+      let arcGeometry = new THREE.ShapeGeometry(shapePoint)
+      let arcMaterial = new THREE.MeshBasicMaterial({ color: 0x008080 ,side: THREE.BackSide, transparent: true })
+      let point = new THREE.Mesh(arcGeometry, arcMaterial)
+
+      //draw curve
+      let geometryLine = new THREE.Geometry()
+      let arc = new THREE.ArcCurve(0, 0, 2.5, 0, 2 * Math.PI)
+      let points = arc.getPoints(40)
+      geometryLine.setFromPoints(points)
+      let LineMateri = new THREE.LineBasicMaterial({ color: 0x20b2aa, })
+      let line = new THREE.Line(geometryLine, LineMateri)
+
+      let pos = getPosition(116.23, 39.54, 50)
+      // let pos = getCordinate(116.23, 39.54)
+
+      point.position.set(pos.x, pos.y, pos.z)
+      line.position.set(pos.x, pos.y, pos.z)
+
+      point.lookAt(new THREE.Vector3(0,0,0))
+      line.lookAt(new THREE.Vector3(0,0,0))
+    
+
+      // let spherical = new THREE.Spherical()
+      // console.log(spherical,'shperical');
+      // spherical.setFromCartesianCoords(pos.x, pos.y, pos.z)
+      // console.log(spherical,'shperical');
+
+      // point.rotateX(spherical.phi - Math.PI / 2)
+      // point.rotateY(spherical.theta)
+
+      //grpup added
+      group.add(point)
+      group.add(line)
+      scene.add(group)
+
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 5)
+      directionalLight.position.set(0, 200, 200)
+      // directionalLight.target = mesh
+      var directionalLight2 = new THREE.DirectionalLight(0xffffff, 5)
+      directionalLight2.position.set(0, -200, 200)
+      // directionalLight.target = mesh
+      var ambient = new THREE.AmbientLight(0x888888)
+      scene.add(ambient, directionalLight, directionalLight2)
+
+      var width = window.innerWidth //窗口宽度
+      var height = window.innerHeight //窗口高度
+      var k = width / height //窗口宽高比
+      var s = 100 //三维场景显示范围控制系数，系数越大，显示的范围越大
+      var camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 5000)
+      camera.position.set(200, 0, 0) //设置相机位置
+      camera.lookAt(scene.position) //设置相机方向(指向的场景对象)
+
+      var renderer = new THREE.WebGLRenderer()
+      renderer.setSize(width, height) //设置渲染区域尺寸
+      renderer.setClearColor(0x000000, 1) //设置背景颜色
+      document.body.appendChild(renderer.domElement) //body元素中插入canvas对象
+
+      //my get position
+      function getCordinate(longitude, latitude, radius = 50) {
+        var phi = (90 - latitude) * (Math.PI / 180)
+        var theta = (longitude + 180) * (Math.PI / 180)
+
+        let x = -(radius * Math.sin(phi) * Math.cos(theta))
+        let z = radius * Math.sin(phi) * Math.sin(theta)
+        let y = radius * Math.cos(phi)
+
+        return { x: x, y: y, z: z }
+      }
+      const { x, y, z } = getCordinate(116.23, 39.54)
+
+      //his get positon
+      function getPosition(longitude, latitude, radius = this.radius) {
+        // 经度，纬度转换为坐标
+        let lg = THREE.Math.degToRad(longitude)
+        let lt = THREE.Math.degToRad(latitude) // 获取x，y，z坐标
+        let temp = radius * Math.cos(lt)
+        let x = temp * Math.sin(lg)
+        let y = radius * Math.sin(lt)
+        let z = temp * Math.cos(lg)
+        return new THREE.Vector3(x, y, z)
+      }
+
+      console.log(getPosition(116.23, 39.54, 50), 'getpos')
+      console.log(x, y, z, 'xyz')
+
+      function render() {
+        renderer.render(scene, camera)
+        requestAnimationFrame(render) //请求再次执行渲染函数render
+      }
+
+      render()
+      var controls = new THREE.OrbitControls(camera, renderer.domElement)
+    </script>
+  </body>
+</html>

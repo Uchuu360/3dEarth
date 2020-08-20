@@ -9,11 +9,27 @@
 
       canvas {
         display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      .text {
+        width: 300px;
+        color: white;
+        font-size: 18px;
+        padding: 3px;
+        border-radius: 5%;
+        position: absolute;
+        display: none;
+        z-index: 1;
+        /* text-align: center; */
       }
     </style>
   </head>
 
   <body>
+    <div class="text"></div>
     <!-- <button onclick='add10Lines'>add 10 lines</button> -->
     <script src="js/three.js"></script>
     <script src="js/OrbitControls.js"></script>
@@ -49,11 +65,13 @@
       //   fragmentShader: document.getElementById('fs').textContent,
       //   wireframe: true,
       // })
+      let textBox = document.getElementsByClassName('text')[0]
 
       let INTERSECTED
 
       let group = new THREE.Group()
       let pointList = []
+      let circleList = []
 
       let uniforms
       // let geometry = new THREE.SphereGeometry(50, 50, 50)
@@ -138,6 +156,11 @@
       directionalLight2.position.set(0, -200, 200)
       directionalLight2.target = mesh
       scene.add(directionalLight2)
+
+      var directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight3.position.set(0, 0, -200)
+      directionalLight3.target = mesh
+      scene.add(directionalLight3)
 
       var ambient = new THREE.AmbientLight(0x444444)
       // scene.add(ambient, directionalLight, directionalLight2)
@@ -321,19 +344,21 @@
       drawPoint(-58.4, -34.6)
 
       function drawPoint(longitude, latitude) {
-        let arcMaterial = new THREE.MeshBasicMaterial({
+        let arcMaterial = new THREE.LineBasicMaterial ({
           // color: 0x008080,
           color: 'orange',
           side: THREE.BackSide,
           transparent: true,
+          opacity:0.9,
         })
 
         let LineMateri = new THREE.LineBasicMaterial({
           // color: 0x20b2aa
           color: 'orange',
+          transparent: true,
+          side:THREE.FrontSide,
         })
-
-        let pointGroup = new THREE.Group()
+       
         let shapePoint = new THREE.Shape()
         shapePoint.absarc(0, 0, 2.5, 0, 2 * Math.PI, false)
         let arcGeometry = new THREE.ShapeGeometry(shapePoint)
@@ -342,7 +367,7 @@
 
         //draw curve
         let geometryLine = new THREE.Geometry()
-        let arc = new THREE.ArcCurve(0, 0, 3.5, 0, 2 * Math.PI)
+        let arc = new THREE.ArcCurve(0, 0, 4, 0, 2 * Math.PI)
         let points = arc.getPoints(40)
         geometryLine.setFromPoints(points)
 
@@ -356,9 +381,9 @@
         point.lookAt(new THREE.Vector3(0, 0, 0))
         line.lookAt(new THREE.Vector3(0, 0, 0))
 
-        pointGroup.add(point, line)
-        group.add(pointGroup)
+        group.add(point, line)
         pointList.push(point)
+        circleList.push(line)
       }
 
       // DrawLineWithNum(116.23, 39.54, -0.7, 51.3, 3)
@@ -374,6 +399,17 @@
       //   let y = Math.random() * 180 - 90
       //   drawLine(116.23, 39.54, x, y)
       // }
+
+      function transPosition(position) {
+        let world_vector = new THREE.Vector3(position.x, position.y, position.z)
+        let vector = world_vector.project(camera)
+        let halfWidth = window.innerWidth / 2,
+          halfHeight = window.innerHeight / 2
+        return {
+          x: Math.round(vector.x * halfWidth + halfWidth),
+          y: Math.round(-vector.y * halfHeight + halfHeight),
+        }
+      }
 
       //interaction
 
@@ -391,6 +427,7 @@
             point.material.color.setHex(point.currentHex)
           }
         })
+        textBox.style.display = 'none'
         // console.log(pointList)
         var intersects = raycaster.intersectObjects(pointList, true)
 
@@ -398,6 +435,17 @@
           INTERSECTED = intersects[0].object
           INTERSECTED.currentHex = INTERSECTED.material.color.getHex()
           INTERSECTED.material.color.setHex(0xffffff)
+          //将选中物体的三维坐标转化
+          var position = new THREE.Vector3(
+            INTERSECTED.position.x,
+            INTERSECTED.position.y,
+            INTERSECTED.position.z
+          )
+          console.log(transPosition(position), 'transpos')
+          textBox.style.display = 'inline-block'
+          textBox.style.left = transPosition(position).x + 'px'
+          textBox.style.top = transPosition(position).y + 'px'
+          textBox.innerHTML = 'Location: E 166。20℃ W 36.56℃'
         }
         // console.log(intersects,'intersectid');
         // var color = Math.random() * 0xfffff
@@ -406,9 +454,9 @@
         //   console.log(intersects[i],'intersects[i')
         //   alert('babab')
         // }
-        console.log(intersects[0], 'obj')
-        console.log(intersects.length, 'len')
-        console.log(INTERSECTED, 'INTERSECTED')
+        // console.log(intersects[0], 'obj')
+        // console.log(intersects.length, 'len')
+        // console.log(INTERSECTED, 'INTERSECTED')
         // if (intersects.length > 0) {
         //   console.log('================here0');
         //   if (INTERSECTED != intersects[0].object) {
@@ -430,6 +478,7 @@
         //   INTERSECTED = null
         // }
 
+        controls.update()
         renderer.render(scene, camera)
       }
 
@@ -439,6 +488,18 @@
       function render() {
         renderer.render(scene, camera)
         // group.rotateY(0.01)
+        circleList.forEach((item) => {
+          item.scale.x = item.scale.x + 0.005
+          item.scale.y = item.scale.y + 0.005
+          if (item.scale.x > 1.1) {
+            item.material.opacity = item.material.opacity - 0.005
+          }
+          if (item.scale.x > 2) {
+            item.scale.x = 1
+            item.scale.y = 1
+            item.material.opacity = 0.8
+          }
+        })
         galaxy.rotateY(0.005)
         uniforms.time.value += 0.01
         requestAnimationFrame(render) //请求再次执行渲染函数render
